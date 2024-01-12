@@ -1,0 +1,17 @@
+# File extensions which should not be uploaded to github
+*.dat
+*.out
+*.sim
+*.DS_store
+*.stdout
+*.c
+*.stderr
+*.png
+*.out.dSYM
+
+# Folder ques that should not be uploaded to github
+Cluster*
+*test*
+*Ef_res*
+Bifrost*/
+#!**/*Bifrost*
