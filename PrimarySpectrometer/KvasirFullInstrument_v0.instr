@@ -1626,26 +1626,37 @@ ROTATED (0, A3, 0) RELATIVE EndOfelement_1
 
 COMPONENT Sample_arm = Arm()
 AT (0, 0, 0) RELATIVE Sample_pos 
-ROTATED (0, A4, 0) RELATIVE Sample_pos
+ROTATED (0, A4, 0) RELATIVE EndOfelement_1
 
 
-/*COMPONENT incoherent_sample = Incoherent(
+COMPONENT incoherent_sample = Incoherent(
     xwidth=0.005, 
     yheight=0.005, 
     zdepth=0.005, 
     focus_xw=0.05, 
     focus_yh=0.15, 
-    target_index=9,
+    target_index=1,
     Etrans=Etrans, 
     deltaE=0.0001,
     order=1)
 AT (0, 0, 0) RELATIVE Sample_arm
-ROTATED (0, 0, 0) RELATIVE Sample_arm*/
+ROTATED (0, 0, 0) RELATIVE Sample_arm
 
-COMPONENT Div2d_sample_B = Divergence_monitor(
+
+COMPONENT cyl_monitor_tof = Cyl_monitor_TOF(
+    nr=720, 
+    filename="cyl_detector.dat", 
+    yheight=0.2, 
+    radius=0.5, 
+    tmin=0, 
+    tmax=1)
+AT (0, 0, 0) RELATIVE Sample_arm
+
+
+/*COMPONENT Div2d_sample_B = Divergence_monitor(
     nh = 200, nv = 200, filename = "Div2d_sample_B", xwidth = sampleSizeX,
     yheight = sampleSizeY, maxdiv_h = 0.750000, maxdiv_v = 0.750000,restore_neutron=1)
-  AT (0, 0,0) RELATIVE Sample_pos
+  AT (0, 0,0) RELATIVE Sample_pos*/
  /* EXTEND
     %{
     x_div = RAD2DEG*atan2(vx,vz);
@@ -1653,8 +1664,7 @@ COMPONENT Div2d_sample_B = Divergence_monitor(
     if (SCATTERED) flag=1; else flag=0;
     %}*/
 
-
-COMPONENT DivX_sample_monitor = DivPos_monitor(
+/*COMPONENT DivX_sample_monitor = DivPos_monitor(
     nb=300,
     ndiv = 300,
     filename="DivX_monitor", 
@@ -1677,14 +1687,12 @@ COMPONENT PSD_sample_large = PSD_monitor(
 COMPONENT PSD_sample_small = PSD_monitor(
     nx = 20, ny = 20, filename = "PSD_sample_small", restore_neutron=1,
     xwidth = sampleSizeX, yheight = sampleSizeY)
-  AT (0, 0,u) RELATIVE PREVIOUS
+  AT (0, 0,u) RELATIVE PREVIOUS*/
 
 
   
 
 /********************************************** Backend start*******************************************/
-
-/********************************** 2.7 meV Analyzer*****************************/
 
  COMPONENT ToF_AfterSample = TOF_monitor(
     nt = 500, filename = "ToF_AfterSampel.dat",restore_neutron=1, xwidth = 0.1,
@@ -1719,129 +1727,6 @@ COMPONENT Emon_AfterSample = E_monitor(
     Emax=50, 
     restore_neutron=1)
 AT (0, 0, u) RELATIVE PREVIOUS
-
-COMPONENT arm_mono_2p7 = Arm()
-AT (0, 0, 1.1) RELATIVE Sample_arm
-ROTATED (0, 0, 0) RELATIVE Sample_arm
-
-COMPONENT mono2p7_1 = Monochromator_flat(
-    zwidth=0.134, 
-    yheight=0.012,
-    DM = 3.355, 
-    mosaich=50.0,
-    mosaicv=50.0)
-AT (0, 0.032763, -0.027320) RELATIVE arm_mono_2p7 
-ROTATED (-(90-53.368), 90 , 0) RELATIVE arm_mono_2p7 
-
-COMPONENT mono2p7_2 = Monochromator_flat(
-    zwidth=0.134, 
-    yheight=0.012, 
-    DM = 3.355,
-    mosaich=50.0,
-    mosaicv=50.0)
-AT (0, 0.022028, -0.017992) RELATIVE arm_mono_2p7 
-ROTATED (-(90-53.951), 90 , 0) RELATIVE arm_mono_2p7 
-
-COMPONENT mono2p7_3 = Monochromator_flat(
-    zwidth=0.134, 
-    yheight=0.012, 
-    DM = 3.355,
-    mosaich=50.0,
-    mosaicv=50.0)
-AT (0, 0.011106, -0.008884) RELATIVE arm_mono_2p7 
-ROTATED (-(90-54.534), 90 , 0) RELATIVE arm_mono_2p7
-
-COMPONENT mono2p7_4 = Monochromator_flat(
-    zwidth=0.134, 
-    yheight=0.012, 
-    DM = 3.355,
-    mosaich=50.0,
-    mosaicv=50.0)
-AT (0, 0, 0) RELATIVE arm_mono_2p7 
-ROTATED (-(90-55.117), 90 , 0) RELATIVE arm_mono_2p7 
-
-COMPONENT mono2p7_5 = Monochromator_flat(
-    zwidth=0.134, 
-    yheight=0.012, 
-    DM=3.355,
-    mosaich=50.0,
-    mosaicv=50.0)
-AT (0, -0.011284, 0.008656) RELATIVE arm_mono_2p7 
-ROTATED (-(90-55.700), 90 , 0) RELATIVE arm_mono_2p7 
-
-COMPONENT mono2p7_6 = Monochromator_flat(
-    zwidth=0.134, 
-    yheight=0.012, 
-    DM = 3.355,
-    mosaich=50.0,
-    mosaicv=50.0)
-AT (0, -0.022742, 0.017081) RELATIVE arm_mono_2p7 
-ROTATED (-(90-56.283), 90 , 0) RELATIVE arm_mono_2p7 
-
-COMPONENT mono2p7_7 = Monochromator_flat(
-    zwidth=0.134, 
-    yheight=0.012, 
-    DM = 3.355,
-    mosaich=50.0,
-    mosaicv=50.0)
-AT (0, -0.034369, 0.025270) RELATIVE arm_mono_2p7 
-ROTATED (-(90-56.867), 90 , 0) RELATIVE arm_mono_2p7
-
-
-/******************************************** DETECTORS ***************************************/
-
-
-/************ 2.7 meV detectors for inelastic linewidths ****************/
-
-COMPONENT arm_det_2p7 = Arm()
-AT (0, -1.1156222, 0.6887723) RELATIVE Sample_arm
-
-COMPONENT tof_monitor_2p7_mid_res = TOF_monitor(
-    nt = 25000, 
-    filename="tof_det_2p7_mid_res.dat",  
-    xwidth = 0.05,
-    yheight = 0.0127,
-    tmin = 0, 
-    tmax = 250000, // 5.5*72.0*1e6/v_0
-    restore_neutron=1)  
-AT (0, 0, 0) RELATIVE arm_det_2p7
-ROTATED (55.117*2, 0, 0) RELATIVE arm_det_2p7
-
-COMPONENT e_monitor_2p7_mid_res= E_monitor(
-    nE=10000, 
-    filename="emon_det_2p7_mid_res", 
-    xwidth = 0.05,
-    yheight = 0.0127,
-    Emin=0, 
-    Emax=100,
-    restore_neutron=1)
-AT (0, -0.00001, -0.00001) RELATIVE arm_det_2p7
-ROTATED (55.117*2, 0, 0) RELATIVE arm_det_2p7
-
-COMPONENT ToF_Lambda_det2p7 = TOFLambda_monitor(
-    nL=100, 
-    nt=25000, 
-    tmin=0, 
-    tmax=250000, 
-    filename="ToF_Lambda_det2p7.dat", 
-    xwidth=0.05, 
-    yheight=0.0127, 
-    Lmin=0, 
-    Lmax=6, 
-    restore_neutron=1)
-AT (0, -0.00002, -0.00002) RELATIVE arm_det_2p7
-ROTATED (55.117*2, 0, 0) RELATIVE arm_det_2p7
-
-COMPONENT psd_det_2p7_mid_res = PSD_monitor(
-    nx=100, 
-    ny=100, 
-    filename="PSD_Detector_2p7_mid_res", 
-    xwidth = 0.05,
-    yheight = 0.0127,
-    restore_neutron=1)
-AT (0, -0.00003, -0.00003) RELATIVE arm_det_2p7
-ROTATED (55.117*2, 0, 0) RELATIVE arm_det_2p7
-
 
 FINALLY
 %{

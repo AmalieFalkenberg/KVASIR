@@ -12,6 +12,6 @@
 # Folder ques that should not be uploaded to github
 Cluster*
 *test*
-*Ef_res*
+*2024*
 Bifrost*/
 #!**/*Bifrost*
