@@ -1,0 +1,89 @@
+/*******************************************************************************
+* Instrument: KVASIR
+*
+* %I
+* Written by: Amalie Falkenberg Davidsen
+* Date: 21.08.2024
+* Origin: NBI, KU
+* %INSTRUMENT_SITE: Generic ???
+*
+* Simple thermal triple axis spectrometer for test of Phonon_BvK_PG component
+*
+* %D
+* <instrument description>
+*
+* Example: <parameters=values>
+*
+* %P
+* E:       [meV] Energy transfer
+* Ef:      [meV] Final energy
+* Dlambda: [AA] width of wavelength band
+* h:       [rlu] q-value in hexagonal plane
+* l:       [rlu] q-value out of hexagonal plane
+* dA3:     [deg] A3 offset
+* phononmode: [1] choice of a specific phonon mode  
+* ...
+*
+* %L
+* <reference/HTML link>
+*
+* %E
+*******************************************************************************/
+
+DEFINE INSTRUMENT template_body_simple(Ef=2)
+
+
+DECLARE
+%{
+double lambda_f, D_lambda, width;  
+double ttS, ttA;
+double d_PG;
+%}
+
+INITIALIZE
+%{
+D_lambda=0.1;
+width=0.1;
+ttS=20;
+
+
+d_PG=3.355;
+
+lambda_f = 1.11056/sqrt(Ef);
+%}
+
+TRACE
+
+COMPONENT source = Source_Maxwell_3(
+    xwidth=width,
+    yheight=width,
+    Lmin=lambda_f-D_lambda/2, 
+    Lmax=lambda_f+D_lambda/2, 
+    dist=0.1, 
+    focus_yh=width, 
+    focus_xw=width, 
+    T1=300, 
+    T2=300, 
+    T3=300, 
+    I1=1E15,
+    I2=1E15,
+    I3=1E15)
+AT (0, 0, 0) RELATIVE ABSOLUTE
+ROTATED (0,0,ttS) RELATIVE PREVIOUS
+
+COMPONENT Analyzer = Monochromator_flat(
+    zwidth = 1,
+    yheight = 1,
+    mosaich = 37, 
+    mosaicv = 37,
+    Q = 1.87278, 
+    DM = d_PG,
+    r0 = 0.8)
+AT (0, 2, 0) RELATIVE PREVIOUS
+ROTATED (0, 0, 0) RELATIVE PREVIOUS
+
+FINALLY
+%{
+%}
+
+END
