@@ -1,0 +1,225 @@
+/*******************************************************************************
+* Instrument: KVASIR
+*
+* %I
+* Written by: Amalie Falkenberg Davidsen
+* Date: 21.08.2024
+* Origin: NBI, KU
+* %INSTRUMENT_SITE: Generic ???
+*
+* Simple thermal triple axis spectrometer for test of Phonon_BvK_PG component
+*
+* %D
+* <instrument description>
+*
+* Example: <parameters=values>
+*
+* %P
+* ...
+*
+* %L
+* <reference/HTML link>
+*
+* %E
+*******************************************************************************/
+
+DEFINE INSTRUMENT template_body_simple(Ef=1.83, d_SA=3, d_AD=2)
+
+
+DECLARE
+%{
+double lambda_f, D_lambda, width;  
+double tS, tA, tRD;
+double d_PG;
+%}
+
+INITIALIZE
+%{
+D_lambda=0.1;
+width=0.01;
+
+d_PG=3.355;
+
+lambda_f = 1/(0.11056*sqrt(Ef));
+
+tS=20;
+tRD=360*0.0125/(2*d_AD*3.142);
+tA = asin(lambda_f/(2*d_PG))*RAD2DEG;
+
+printf("theta two Analyzer = %g \n",tA);
+printf("lambda_f = %g \n",lambda_f);
+printf("Rotation angle for Detectors = %g \n",tRD);
+
+%}
+
+TRACE
+
+COMPONENT origin = Progress_bar()
+AT (0, 0, 0) RELATIVE ABSOLUTE
+
+COMPONENT source = Source_Maxwell_3(
+    xwidth=width,
+    yheight=width,
+    Lmin=lambda_f-D_lambda/2, 
+    Lmax=lambda_f+D_lambda/2, 
+    dist=d_SA, 
+    focus_yh=width, 
+    focus_xw=width, 
+    T1=300, 
+    T2=300, 
+    T3=300, 
+    I1=1E15,
+    I2=1E15,
+    I3=1E15)
+AT (0, 0, 0) RELATIVE origin
+ROTATED (-tS,0, 0) RELATIVE origin
+
+COMPONENT PSD_monitor_analyzer = PSD_monitor(
+    nx = 40,
+    ny = 40,
+    xwidth = width*2,
+    yheight = width*2,
+    restore_neutron=1,
+    filename="PSD_analyzer.dat")
+AT (0, 0, d_SA) RELATIVE PREVIOUS
+
+COMPONENT Analyzer = Monochromator_flat(
+    zwidth = width*2,
+    yheight = width*2,
+    mosaich = 37, 
+    mosaicv = 37,
+    Q = 1.87278, 
+    DM = d_PG,
+    r0 = 0.8)
+AT (0, 0, 0) RELATIVE PREVIOUS
+ROTATED (90-tA, 90, 0) RELATIVE PREVIOUS
+
+
+// ARM TO DETECTOR 1
+COMPONENT arm_analyzer_1 = Arm()
+AT (0, 0, 0) RELATIVE Analyzer
+ROTATED (-tA*2, -tRD*2, 0) RELATIVE PSD_monitor_analyzer
+
+COMPONENT Detector_1 = PSD_monitor(
+    nx = 40,
+    ny = 40,
+    xwidth = 0.0125,
+    yheight = 0.01,
+    restore_neutron=1,
+    filename="Detector1.dat")
+AT (0, 0, d_AD) RELATIVE PREVIOUS
+
+COMPONENT E_monitor_1 = E_monitor(
+    xwidth = 0.0125,
+    yheight = 0.01,
+    Emin = 1.5,
+    Emax = 2.5, 
+    restore_neutron = 1,
+    nE = 1000,
+    filename="E_monitor1.dat")
+AT (0, 0, 0.01) RELATIVE PREVIOUS
+
+
+
+// ARM TO DETECTOR 2
+COMPONENT arm_analyzer_2 = Arm()
+AT (0, 0, 0) RELATIVE Analyzer
+ROTATED (-tA*2, -tRD, 0) RELATIVE PSD_monitor_analyzer
+
+COMPONENT Detector_2 = PSD_monitor(
+    nx = 40,
+    ny = 40,
+    xwidth = 0.0125,
+    yheight = 0.01,
+    restore_neutron=1,
+    filename="Detector2.dat")
+AT (0, 0, d_AD) RELATIVE PREVIOUS
+
+COMPONENT E_monitor_2 = E_monitor(
+    xwidth = 0.0125,
+    yheight = 0.01,
+    Emin = 1.5,
+    Emax = 2.5, 
+    restore_neutron = 1,
+    nE = 1000,
+    filename="E_monitor2.dat")
+AT (0, 0, 0.01) RELATIVE PREVIOUS
+
+// ARM TO DETECTOR 3
+COMPONENT arm_analyzer_3 = Arm()
+AT (0, 0, 0) RELATIVE Analyzer
+ROTATED (-tA*2, 0, 0) RELATIVE PSD_monitor_analyzer
+
+COMPONENT Detector_3 = PSD_monitor(
+    nx = 40,
+    ny = 40,
+    xwidth = 0.0125,
+    yheight = 0.01,
+    restore_neutron=1,
+    filename="Detector3.dat")
+AT (0, 0, d_AD) RELATIVE PREVIOUS
+
+COMPONENT E_monitor_3 = E_monitor(
+    xwidth = 0.0125,
+    yheight = 0.01,
+    Emin = 1.5,
+    Emax = 2.5, 
+    restore_neutron = 1,
+    nE = 1000,
+    filename="E_monitor3.dat")
+AT (0, 0, 0.01) RELATIVE PREVIOUS
+
+
+// ARM TO DETECTOR 4
+COMPONENT arm_analyzer_4 = Arm()
+AT (0, 0, 0) RELATIVE Analyzer
+ROTATED (-tA*2, tRD, 0) RELATIVE PSD_monitor_analyzer
+
+COMPONENT Detector_4 = PSD_monitor(
+    nx = 40,
+    ny = 40,
+    xwidth = 0.0125,
+    yheight = 0.01,
+    restore_neutron=1,
+    filename="Detector4.dat")
+AT (0, 0, d_AD) RELATIVE PREVIOUS
+
+COMPONENT E_monitor_4 = E_monitor(
+    xwidth = 0.0125,
+    yheight = 0.01,
+    Emin = 1.5,
+    Emax = 2.5, 
+    restore_neutron = 1,
+    nE = 1000,
+    filename="E_monitor4.dat")
+AT (0, 0, 0.01) RELATIVE PREVIOUS
+
+// ARM TO DETECTOR 5
+COMPONENT arm_analyzer_5 = Arm()
+AT (0, 0, 0) RELATIVE Analyzer
+ROTATED (-tA*2, tRD*2, 0) RELATIVE PSD_monitor_analyzer
+
+COMPONENT Detector_5 = PSD_monitor(
+    nx = 40,
+    ny = 40,
+    xwidth = 0.0125,
+    yheight = 0.01,
+    restore_neutron=1,
+    filename="Detector5.dat")
+AT (0, 0, d_AD) RELATIVE PREVIOUS
+
+COMPONENT E_monitor_5 = E_monitor(
+    xwidth = 0.0125,
+    yheight = 0.01,
+    Emin = 1.5,
+    Emax = 2.5, 
+    restore_neutron = 1,
+    nE = 1000,
+    filename="E_monitor5.dat")
+AT (0, 0, 0.01) RELATIVE PREVIOUS
+
+FINALLY
+%{
+%}
+
+END

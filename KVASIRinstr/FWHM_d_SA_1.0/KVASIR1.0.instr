@@ -30,7 +30,7 @@
 * %E
 *******************************************************************************/
 
-DEFINE INSTRUMENT template_body_simple(Ef=2)
+DEFINE INSTRUMENT template_body_simple(Ef=2, d_SA=1, d_AD=1)
 
 
 DECLARE
@@ -43,13 +43,16 @@ double d_PG;
 INITIALIZE
 %{
 D_lambda=0.1;
-width=0.1;
-ttS=20;
-
+width=0.01;
 
 d_PG=3.355;
 
 lambda_f = 1.11056/sqrt(Ef);
+
+ttS=20;
+ttA = asin(lambda_f/(2*d_PG))*RAD2DEG;
+
+printf("theta two Analyzer = %g \n",ttA);
 %}
 
 TRACE
@@ -67,9 +70,23 @@ COMPONENT source = Source_Maxwell_3(
     T3=300, 
     I1=1E15,
     I2=1E15,
-    I3=1E15)
+    I3=1E15,
+    target_index = 1)
 AT (0, 0, 0) RELATIVE ABSOLUTE
-ROTATED (0,0,ttS) RELATIVE PREVIOUS
+ROTATED (0, 0, ttS) RELATIVE ABSOLUTE
+
+COMPONENT arm_scorce = Arm()
+AT (0, 0, 0) RELATIVE PREVIOUS
+ROTATED (0, 0, ttS) RELATIVE PREVIOUS
+
+COMPONENT PSD_monitor_analyzer = PSD_monitor(
+    nx = 40,
+    ny = 40,
+    xwidth = 1,
+    yheight = 1,
+    restore_neutron=1,
+    filename="PSD_analyzer.dat")
+AT (0, 0, d_SA) RELATIVE PREVIOUS
 
 COMPONENT Analyzer = Monochromator_flat(
     zwidth = 1,
@@ -79,8 +96,21 @@ COMPONENT Analyzer = Monochromator_flat(
     Q = 1.87278, 
     DM = d_PG,
     r0 = 0.8)
-AT (0, 2, 0) RELATIVE PREVIOUS
-ROTATED (0, 0, 0) RELATIVE PREVIOUS
+AT (0, 0, 0) RELATIVE PREVIOUS
+ROTATED (0, 0, -ttA) RELATIVE PREVIOUS
+
+COMPONENT arm_analyzer = Arm()
+AT (0, 0, 0) RELATIVE PREVIOUS
+ROTATED (0, 0, -ttA) RELATIVE PREVIOUS
+
+COMPONENT Detector = PSD_monitor(
+    nx = 40,
+    ny = 40,
+    xwidth = 1,
+    yheight = 1,
+    restore_neutron=1,
+    filename="Detector.dat")
+AT (0, 0, d_AD) RELATIVE PREVIOUS
 
 FINALLY
 %{
