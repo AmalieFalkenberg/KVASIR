@@ -1,0 +1,1363 @@
+/*****************************************************************************
+*         McStas instrument definition URL=http://www.mcstas.org
+*
+* Instrument: MIRACLES. Backscattering instrument at ESS.
+* Alternative guide design proposal assuming clashes in the NBOA and other construction and real-life issues 
+* Authored to McStas file by Paula Luna, Iñigo Herranz, Mads Bertelsen, Damian Martin Rodriguez and Felix J Villacorta
+* Date: 24/01/2018
+* Origin: ESS Bilbao/Niels Bohr Institute/European Spallation Source
+* Version of McStas: 2.4.1
+* Current instrument parameters according to miracles proposal 15/4/2015 
+* Sample is 162.5 m from moderator. There are 3 choppers
+*******************************************************************************/
+
+DEFINE INSTRUMENT MIRACLES(Ef=2.1)
+
+
+
+//OPTION_1: PWD choppers at 7.7 m / PS chopper at 8.2 m / FO chopper at 54.5 m
+
+DECLARE
+%{
+
+double lambda_f, D_lambda, width;  
+double tS, tA, tRDy, tRDx, h_D, rot_arm_after_sample = 20;
+double d_PG, d_SD, d_SDz, d_SA = 3.0, d_AD = 2.5;
+double u, displace = 0.1;
+double x_tS_d;
+double x_tS;
+double y_tS_d;
+double y_tS;
+double z_tS_d;
+double z_tS;
+
+
+
+
+
+double rotinstrument=-1.0;
+
+int sample_scattered=0;
+int analyzer_scattered=0;
+
+
+double vn;
+double divh;
+double divv;
+
+double lambdacentral=6.27;
+
+
+//CONTROL PARAMETERS
+    int moderator_time_emission = 1; //0:all the neutrons are emitted at zero-time.-> time-infinitesimal pulse.
+    int zero_time_emission_at_sample = 1; //0:all the neutrons reach the sample at the same time - secondary independent from the primary.
+    int crystal = 1; //0:PG 002; 1:Silicon 111
+
+
+//GENERAL GUIDE PARAMETERS
+    const double gravityeffect = -9.81; //[m/s^2] 0-value disables gravity
+    const double dist_source_guide = 1.9; //Distance from source to guide [m].
+    const double dist_guide_sample = 0.300; //Distance from the end of the guide to the sample position [m]
+    double gapguides = 1e-3; //Gap between guides [m]
+    double gapchoppers = 1E-2; //Gap between choppers [m]
+    double gapchopperguide = 1E-2; //Gap between guide and chopper [m]
+    double guide[19][10] = { //Geometric guide parameters
+       //w1[m], h1[m], w2[m], h2[m], l:individual piece[m], x[m], y[m], dist[m], curv[m], N
+       {0.0662 , 0.0482 , 0.0652 , 0.0522 , 0.5 ,  0.0, 0.0, 0.0, 0.0 , 1 }, //guide G1a
+       {0.0652 , 0.0522 , 0.0642 , 0.0558 , 0.5 ,  0.0, 0.0, 0.0, 0.0 , 1 }, //guide G1b
+       {0.0642 , 0.0558 , 0.0632 , 0.0591 , 0.5 ,  0.0, 0.0, 0.0, 0.0 , 1 }, //guide G1c
+       {0.0632 , 0.0591 , 0.0612 , 0.0651 , 1.0 ,  0.0, 0.0, 0.0, 0.0 , 1 }, //guide G2a 
+       {0.0612 , 0.0651 , 0.0592 , 0.0703 , 0.98 , 0.0, 0.0, 0.0, 0.0 , 1 }, //guide G2b -->END of NBOA 
+       {0.0592 , 0.0703 , 0.0546 , 0.0805 , 2.25 , 0.0, 0.0, 0.0, 0.0 , 1 }, //guide G3 
+       {0.0546 , 0.0805 , 0.0582 , 0.083 , 0.5 ,  0.0, 0.0, 0.0, 0.0 , 1 }, //guide G4 - PWD-PS 
+       {0.0582 , 0.083 , 0.08 ,  0.10 , 3.0 , 0.0, 0.0, 0.0, 0.0 , 1 }, //guide G5
+       {0.080  , 0.10  , 0.08 ,  0.10 , 1.0 ,  0.0, 0.0, 0.0, 2025, 36}, //guide G6 - curved
+       {0.080  , 0.10  , 0.105 , 0.105 , 7.2 ,  0.0, 0.0, 0.0, 0.0 , 1 }, //guide G7
+       {0.105 , 0.105 , 0.13 , 0.11 , 7.8 ,  0.0, 0.0, 0.0, 0.0 , 1 }, //guide G8
+       {0.13  , 0.11  , 0.13 , 0.11 , 19 ,  0.0, 0.0, 0.0, 0.0 , 1 }, //guide G9a - long st
+       {0.13  , 0.11  , 0.13 , 0.11 , 64.1,  0.0, 0.0, 0.0, 0.0 , 1 }, //guide G9b - long st
+       {0.13  , 0.11  , 0.113, 0.10 , 8.0 ,  0.0, 0.0, 0.0, 0.0 , 1 }, //guide G10
+       {0.113 , 0.10  , 0.0961  , 0.083  , 5.0 , 0.0, 0.0, 0.0, 0.0 , 1 }, //guide G11
+       {0.0961 , 0.083 , 0.0777  , 0.0689 , 1.5 , 0.0, 0.0, 0.0, 0.0 , 1 }, //guide G12
+       {0.0777 , 0.0689 , 0.061  , 0.0549 , 1.0 ,  0.0, 0.0, 0.0, 0.0 , 1 }, //guide G13
+       {0.061  , 0.0549 , 0.050  , 0.0454 , 0.5 ,  0.0, 0.0, 0.0, 0.0 , 1 }, //guide G14
+       {0.050  , 0.0454 , 0.0217 , 0.0199 , 0.8 ,  0.0, 0.0, 0.0, 0.0 , 1 }, //guide G15
+    };
+
+    double m[19][4] = { //Coating guide parameters.
+       //mleft, mright, mtop, mbottom
+       {4.0, 4.0, 4.0, 4.0}, //guide G1a
+       {4.0, 4.0, 4.0, 4.0}, //guide G1b
+       {4.0, 4.0, 4.0, 4.0}, //guide G1c
+       {4.0, 4.0, 4.0, 4.0}, //guide G2a
+       {4.0, 4.0, 4.0, 4.0}, //guide G2b --> END of NBOA 
+       {4.0, 4.0, 4.0, 4.0}, //guide G3 
+       {2.0, 2.0, 2.5, 2.5}, //guide G4 -PWD-PS
+       {3.0, 3.0, 2.5, 2.5}, //guide G5 
+       {2.0, 2.5, 2.0, 2.0}, //guide G6 - curved
+       {1.5, 1.5, 2.0, 2.0}, //guide G7
+       {1.5, 1.5, 2.0, 2.0}, //guide G8
+       {1.5, 1.5, 1.5, 1.5}, //guide G9a - long straight
+       {1.5, 1.5, 1.5, 1.5}, //guide G9b - long straight
+       {2.0, 2.0, 2.0, 2.0}, //guide G10
+       {2.0, 2.0, 2.0, 2.0}, //guide G11
+       {2.5, 2.5, 2.5, 2.5}, //guide G12
+       {3.0, 3.0, 3.0, 3.0}, //guide G13
+       {4.0, 4.0, 4.0, 4.0}, //guide G14
+       {5.0, 5.0, 5.0, 5.0}, //guide G15
+    };
+
+//Choppers
+
+    double chopper[6][10] = { //Chopper cascade parameters
+       //x[m], y[m], dist[m], radius[m], nu[Hz], nslit, theta_0[º], yheight[m], phase[º], delay[s]
+       {0.00, 0.00, 0.00, 0.35,  14 , 1.0, 12,  0.1, 0.0, 0.0139},   //CH1a --> PWD1
+       {0.00, 0.00, 0.00, 0.35, -0 , 1.0, 12,  0.1, 0.0, 0.0139},   //CH1b --> PWD2
+       {0.00, 0.00, 0.00, 0.35,  14 , 1.0, 18,  0.1, 0.0, 0.0147},   //CH2 --> PS
+       {0.00, 0.00, 0.00, 0.35,  14 , 1.0, 25, 0.15, 0.0, 0.0200},   //CH3a --> FO1 at 11.25 m
+       {0.00, 0.00, 0.00, 0.35,  14 , 1.0, 112, 0.15, 0.0, 0.0880},  //CH3b --> FOtot at 54.5 m
+       {0.00, 0.00, 0.00, 0.35,  14 , 1.0, 176, 0.15, 0.0, 0.1340},  //CH4  --> FO2 at 81.25 m
+};
+
+
+
+//SAMPLE SIZE
+    double sample_height = 3.0e-2; //Height of the cylinder sample [m].
+    double sample_radius = 1.5e-2; //Radius of the cylinder sample [m].
+    double sample_thickness = 0.1e-2; //Thickness of the cylinder sample [m].
+    
+
+
+    //Estimation of the phase of the chopper.
+
+    //Calculates the time elapsed by the neutron in the secondary.
+    double t2( double L2, double da, double theta )
+    {
+        return 2*MNEUTRON/(HBAR*2*PI) * L2*(da*1e-10)*sin(DEG2RAD*theta); //seconds
+    }
+
+ 
+    //Calculates the energy via TOF.
+    double TOF2Efunc( double L, double t)
+    {
+	double J2meV = 1.0/(1.602176462e-19) * 1e3 ;
+	return 1.0/2.0*MNEUTRON * pow( L / t, 2) * J2meV;
+    }
+
+    //Calculates the energy exchange via the TOF (see OSIRIS user guide).
+    double deltaE( double L1, double L2, double t, double da, double theta)
+    {
+	double T2 = t2(L2,da,theta) ;
+	double ei = TOF2Efunc( L1,t-T2 );
+	double ef = TOF2Efunc( L2,T2 );
+	return ei-ef; //meV
+    }
+
+    // Routine to get the core in use
+    int getCore2()
+    {
+    	int rank = 0;
+    	#ifdef USE_MPI
+    	MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+    	#endif
+    	return rank;
+    }
+
+%}
+INITIALIZE
+%{
+//COMENTARIO
+D_lambda=0.1;
+width=0.001;
+u =1E-4;
+d_PG=3.355;
+
+lambda_f=1/(0.11056*sqrt(Ef));
+tA=asin(lambda_f/(2*d_PG))*RAD2DEG;
+tS=20;
+x_tS_d = 2/3*d_SA*sin(tS*DEG2RAD); 
+x_tS = x_tS_d/d_SA*RAD2DEG;
+y_tS_d = sqrt(d_SA*d_SA*sin(tS*DEG2RAD)*sin(tS*DEG2RAD) - x_tS_d*x_tS_d);
+y_tS = y_tS_d/d_SA*RAD2DEG;
+z_tS_d = d_SA*cos(tS*DEG2RAD) ;
+z_tS = z_tS_d/d_SA*RAD2DEG;
+d_SDz=d_SA+d_AD*cos(2*tA*DEG2RAD);
+h_D=d_AD*sin(2*tA*DEG2RAD);
+tRDx=-RAD2DEG*atan(d_AD/d_SDz*sin(2*tA*DEG2RAD));
+tRDy=360*0.0125/(2*d_SDz*3.142);
+d_SD=d_AD*sin(2*tA*DEG2RAD)/sin(tRDx*DEG2RAD);
+
+printf("x_tS = %g \n",x_tS);
+printf("y_tS = %g \n",y_tS);
+
+%}
+
+TRACE
+
+//_______________________________________________________________________________________
+//
+// MODERATOR SOURCE
+////////////////////////////////////////////////////////////////////////////////////////
+
+COMPONENT origin = Progress_bar()
+	AT (0,0,0) ABSOLUTE
+
+COMPONENT Source = ESS_butterfly(
+        yheight=0.03,
+        cold_frac=0.5,
+        sector="W", beamline=5,
+        c_performance=1,
+        n_pulses=8,
+        dist = 1.9, focus_xw = guide[0][0], focus_yh = guide[0][1],
+        Lmin=1.27, Lmax=51.27) 
+        AT (0.0, 0.0, 0.0) RELATIVE origin
+
+//ISCS CENTER OF COLD SOURCE, TCS=(-96,81,137), NOMINAL ANGLE MIRACLES=126º, McStas=(38.68,0,18.21)//
+
+COMPONENT ISCS = Arm()
+        AT (0.03868,0,0.01821) RELATIVE Source
+
+COMPONENT InstrArm = Arm()
+        AT (0,0,0) RELATIVE ISCS
+        ROTATED (0,rotinstrument,0) RELATIVE ISCS
+
+
+//____________________________________________________________________________________
+//
+// NBOA - NEUTRON BEAM EXTRACTION
+// TAPERED simulating ELLIPTIC GUIDES Vertical: f1=0 m (ISCS), f2=160 m//
+// TAPERED GUIDES Horizontal: entrance=0.0606, exit=0.04 m//
+//
+
+COMPONENT G1a = Guide_gravity(
+        w1 = guide[0][0], h1 = guide[0][1], w2 = guide[0][2], h2 = guide[0][3],
+        l = guide[0][4], G = gravityeffect,
+        mleft = m[0][0], mright = m[0][1], mtop = m[0][2], mbottom = m[0][3],
+        alpha=0,atop=0,abottom=0,aleft=0,aright=0,W=0)
+        AT (0.0, 0.0, 1.9) RELATIVE InstrArm
+
+COMPONENT G1b = Guide_gravity(
+        w1 = guide[1][0], h1 = guide[1][1], w2 = guide[1][2], h2 = guide[1][3],
+        l = guide[1][4], G = gravityeffect,
+        mleft = m[1][0], mright = m[1][1], mtop = m[1][2], mbottom = m[1][3],
+        alpha=0,atop=0,abottom=0,aleft=0,aright=0,W=0)
+        AT (0.0, 0.0, guide[0][4]) RELATIVE G1a
+
+COMPONENT G1c = Guide_gravity(
+        w1 = guide[2][0], h1 = guide[2][1], w2 = guide[2][2], h2 = guide[2][3],
+        l = guide[2][4], G = gravityeffect,
+        mleft = m[2][0], mright = m[2][1], mtop = m[2][2], mbottom = m[2][3],
+        alpha=0,atop=0,abottom=0,aleft=0,aright=0,W=0)
+        AT (0.0, 0.0, guide[1][4]) RELATIVE G1b
+
+COMPONENT G2a = Guide_gravity(
+        w1 = guide[3][0], h1 = guide[3][1], w2 = guide[3][2], h2 = guide[3][3],
+        l = guide[3][4], G = gravityeffect,
+        mleft = m[3][0], mright = m[3][1], mtop = m[3][2], mbottom = m[3][3],
+        alpha=0,atop=0,abottom=0,aleft=0,aright=0,W=0)
+        AT (0.0, 0.0, guide[2][4]) RELATIVE G1c
+
+COMPONENT G2b = Guide_gravity(
+        w1 = guide[4][0], h1 = guide[4][1], w2 = guide[4][2], h2 = guide[4][3],
+        l = guide[4][4], G = gravityeffect,
+        mleft = m[4][0], mright = m[4][1], mtop = m[4][2], mbottom = m[4][3],
+        alpha=0,atop=0,abottom=0,aleft=0,aright=0,W=0)
+        AT (0.0, 0.0, guide[3][4]) RELATIVE G2a
+
+//END of NBOA//
+//________________________________________________________________________________
+
+///////////////////////////////////////////////////////////////////////////////////////
+// GUIDE NBOA-PWD (Including Bridge Beam Guide)
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+COMPONENT G3 = Guide_gravity(
+        w1 = guide[5][0], h1 = guide[5][1], w2 = guide[5][2], h2 = guide[5][3],
+        l = guide[5][4], G = gravityeffect,
+        mleft = m[5][0], mright = m[5][1], mtop = m[5][2], mbottom = m[5][3],
+        alpha=0,atop=0,abottom=0,aleft=0,aright=0,W=0)
+        AT (0.0, 0.0, guide[4][4]+gapguides) RELATIVE G2b
+
+/*
+COMPONENT G1 = Elliptic_guide_gravity( 
+        linxw = 1e6, linyh = 2, loutxw = 10-guide[0][4], loutyh = 16-2-guide[0][4],
+        xwidth = guide[0][0], yheight = guide[0][1],
+        l = guide[0][4],
+        mleft = m[0][0], mright = m[0][1], mtop = m[0][2], mbottom = m[0][3],
+        alpha=0, W=0, R0=0.99)
+        AT (0.0, 0.0, 2) RELATIVE InstrArm 
+
+COMPONENT G2 = Elliptic_guide_gravity(
+        linxw = 1e6, linyh = 2+guide[0][4], loutxw = 12.4-guide[0][4]-guide[1][4], loutyh = 19-2-guide[0][4]-guide[1][4],
+        xwidth = guide[1][0], yheight = guide[1][1],
+        l = guide[1][4],
+        mleft = m[1][0], mright = m[1][1], mtop = m[1][2], mbottom = m[1][3],
+        alpha=0, W=0, R0=0.99)
+        AT (0.0, 0.0, guide[0][4]) RELATIVE G1
+*/
+
+
+//DETECTORS after NBEX & before PWD
+
+COMPONENT wavelength_NBOA=L_monitor(
+	nL=100,xwidth=guide[6][0],yheight= guide[6][1],restore_neutron=1,
+	filename="wavelength_NBOA",Lmin=1.27,Lmax=11.27)
+AT (0.0, 0.0, guide[5][4]+gapguides) RELATIVE G3
+
+COMPONENT wl_NBOA=L_monitor(
+        nL=250,xwidth=guide[6][0],yheight= guide[6][1],restore_neutron=1,
+        filename="wl_NBOA",Lmin=1.27,Lmax=51.27)
+AT (0.0, 0.0, guide[5][4]+gapguides) RELATIVE G3
+
+COMPONENT tof_NBOA = TOF_monitor(
+	restore_neutron=1, xwidth=guide[6][0], yheight=guide[6][1], filename="tof_NBOA",
+	tmin=0, tmax=404000, nt=16000)
+AT (0.0, 0.0, 0.001) RELATIVE PREVIOUS
+
+COMPONENT psd_NBOA = PSD_monitor(
+	restore_neutron=1, xwidth=0.12, yheight=0.12, nx=120, ny=120, filename="psd_NBOA")
+AT (0.0, 0.0, 0.001) RELATIVE PREVIOUS
+
+COMPONENT divpos_1d_NBOA = Monitor_nD(
+	restore_neutron=1, xwidth=0.12, yheight=0.12, filename="divpos1d_NBOA",
+options=
+        "multiple hdiv all bins=1000, limits=[-5.0,5.0]"
+        "multiple vdiv all bins=1000, limits=[-5.0,5.0]"
+        "multiple x all bins=1400, limits=[-7E-2, 7E-2]"
+        "multiple y all bins=1400, limits=[-7E-2, 7E-2]")
+AT (0.0, 0.0, 0.001) RELATIVE psd_NBOA
+
+COMPONENT Ldiv_NBOA = DivLambda_monitor(nL=80, nh=80, filename="Ldiv_NBOA.div",
+          xmin=-0.1, xmax=0.1, ymin=-0.1, ymax=0.1,
+          maxdiv_h=4, Lmin=2, Lmax=10)
+AT (0, 0, 0.001) RELATIVE PREVIOUS
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+//___________________________________________________________________________________________
+
+// PULSE SHAPING CHOPPER MODULE
+////////////////////////////////////////////////////////////////////////////////////////////
+
+// Pulse shaping chopper(s) (PWD) // 
+/* We use the DiskChopper comp (thus, 2 for two types of slits), the MultiDiskChopper contributed comp can be also an option*/
+
+COMPONENT arm_chopper1=Arm()
+        AT (0.0, 0.0,guide[5][4]+gapguides+gapchopperguide) RELATIVE G3
+
+COMPONENT PWD1 = DiskChopper(
+        radius = chopper[0][3], nu = chopper[0][4], nslit = chopper[0][5],
+        theta_0 = chopper[0][6], yheight = chopper[0][7],
+        delay = chopper[0][9])
+        AT (0.0, 0.0, 0.0) RELATIVE arm_chopper1
+   //     GROUP CH1s
+
+COMPONENT PWD2 = DiskChopper(
+        radius = chopper[1][3], nu = chopper[1][4], nslit = chopper[1][5],
+        theta_0 = chopper[1][6], yheight = chopper[1][7],
+        delay = chopper[1][9])
+        AT (0.0, 0.0, gapchoppers) RELATIVE PWD1
+   //     GROUP CH1s
+/*
+COMPONENT arm_choppers2 = Arm() //Required for the GROUP of choppers.
+        AT (0.0, 0.0, gapchoppers) RELATIVE PREVIOUS
+*/
+
+// Detectors after PWD //
+
+COMPONENT wavelength_PWD=L_monitor(
+	nL=100,xwidth=guide[6][0],yheight= guide[6][1],restore_neutron=1,
+	filename="wavelength_PWD",Lmin=1.27,Lmax=11.27)
+AT (0.0, 0.0, gapchopperguide) RELATIVE PWD2
+
+COMPONENT wl_PWD=L_monitor(
+        nL=250,xwidth=guide[6][0],yheight= guide[6][1],restore_neutron=1,
+        filename="wl_PWD",Lmin=1.27,Lmax=51.27)
+AT (0.0, 0.0, 0.001) RELATIVE PREVIOUS
+
+COMPONENT tof_PWD = TOF_monitor(
+	restore_neutron=1, xwidth=guide[6][0], yheight=guide[6][1], filename="tof_PWD",
+	tmin=0, tmax=400000, nt=20000)
+AT (0.0, 0.0, 0.001) RELATIVE PREVIOUS
+
+COMPONENT psd_PWD = PSD_monitor(
+	restore_neutron=1, xwidth=0.12, yheight=0.12, nx=120, ny=120, filename="psd_PWD")
+AT (0.0, 0.0, 0.001) RELATIVE PREVIOUS
+
+COMPONENT divpos_1d_PWD = Monitor_nD(
+	restore_neutron=1, xwidth=0.12, yheight=0.12, filename="divpos1d_PWD",
+options=
+        "multiple hdiv all bins=1000, limits=[-5.0,5.0]"
+        "multiple vdiv all bins=1000, limits=[-5.0,5.0]"
+        "multiple x all bins=1400, limits=[-7E-2, 7E-2]"
+        "multiple y all bins=1400, limits=[-7E-2, 7E-2]")
+AT (0.0, 0.0, 0.001) RELATIVE psd_PWD
+
+
+// Tapered guide at the PWD-PS choppers area //
+
+COMPONENT G4 = Guide_gravity(
+        w1 = guide[6][0], h1 = guide[6][1], w2 = guide[6][2], h2 = guide[6][3],
+        l = guide[6][4], G = gravityeffect,
+        mleft = m[6][0], mright = m[6][1], mtop = m[6][2], mbottom = m[6][3],
+        alpha=0,atop=0,abottom=0,aleft=0,aright=0,W=0)
+        AT (0.0, 0.0, gapchopperguide) RELATIVE PREVIOUS
+
+// Pulse selection chopper (PS) //
+
+COMPONENT arm_chopperPS=Arm()
+AT (0.0, 0.0, guide[6][4] + gapchopperguide) RELATIVE G4
+
+COMPONENT PS = DiskChopper(
+        radius = chopper[2][3], nu = chopper[2][4], nslit = chopper[2][5],
+        theta_0 = chopper[2][6], yheight = chopper[2][7],
+        delay = chopper[2][9])
+        AT (0.0, 0.0, 0.0) RELATIVE arm_chopperPS
+
+// Detectors after PS //
+
+COMPONENT wavelength_PS=L_monitor(
+	nL=100,xwidth=guide[6][2],yheight= guide[6][3],restore_neutron=1,
+	filename="wavelength_PS",Lmin=1.27,Lmax=11.27)
+AT (0.0, 0.0, gapchopperguide) RELATIVE PS
+
+COMPONENT wl_PS=L_monitor(
+        nL=250,xwidth=guide[6][2],yheight= guide[6][3],restore_neutron=1,
+        filename="wl_PS",Lmin=1.27,Lmax=51.27)
+AT (0.0, 0.0, 0.001) RELATIVE PREVIOUS
+
+COMPONENT tof_PS = TOF_monitor(
+	restore_neutron=1, xwidth=guide[6][2], yheight=guide[6][3], filename="tof_PS",
+	tmin=0, tmax=400000, nt=20000)
+AT (0.0, 0.0, 0.001) RELATIVE PREVIOUS
+
+COMPONENT psd_PS = PSD_monitor(
+	restore_neutron=1, xwidth=0.12, yheight=0.12, nx=120, ny=120, filename="psd_PS")
+AT (0.0, 0.0, 0.001) RELATIVE PREVIOUS
+
+COMPONENT divpos_1d_PS = Monitor_nD(
+	restore_neutron=1, xwidth=0.12, yheight=0.12, filename="divpos1d_PS",
+options=
+        "multiple hdiv all bins=1000, limits=[-5.0,5.0]"
+        "multiple vdiv all bins=1000, limits=[-5.0,5.0]"
+        "multiple x all bins=1400, limits=[-7E-2, 7E-2]"
+        "multiple y all bins=1400, limits=[-7E-2, 7E-2]")
+AT (0.0, 0.0, 0.001) RELATIVE psd_PS
+
+// END OF PS CHOPPER MODULE
+//_______________________________________________________________________
+///////////////////////////////////////////////////////////////////////////
+
+
+// Guide between PS choppers and curve //
+
+COMPONENT G5 = Guide_gravity(
+        w1 = guide[7][0], h1 = guide[7][1], w2 = guide[7][2], h2 = guide[7][3],
+        l = guide[7][4], G = gravityeffect,
+        mleft = m[7][0], mright = m[7][1], mtop = m[7][2], mbottom = m[7][3],
+        alpha=0,atop=0,abottom=0,aleft=0,aright=0,W=0)
+        AT (0.0, 0.0, guide[6][4]+gapchopperguide+gapguides) RELATIVE G4
+/*
+// FO1 CHOPPER 
+// Chopper at 11.25 m to stop long-wavelength harmonics
+COMPONENT arm_chopperFO11=Arm()
+AT (0.0, 0.0, guide[7][4] + gapchopperguide) RELATIVE G5
+
+COMPONENT FO11 = DiskChopper(
+        radius = chopper[3][3], nu = chopper[3][4], nslit = chopper[3][5],
+        theta_0 = chopper[3][6], yheight = chopper[3][7],
+        delay = chopper[3][9])
+        AT (0.0, 0.0, 0.0) RELATIVE arm_chopperFO11
+
+// Detectors after FO11 and before curve//
+COMPONENT wavelength_FO11=L_monitor(
+	nL=100,xwidth=guide[8][0],yheight= guide[8][1],restore_neutron=1,
+	filename="wavelength_FO11",Lmin=1.27,Lmax=11.27)
+AT (0.0, 0.0, gapchopperguide) RELATIVE FO1
+
+COMPONENT wl_FO11=L_monitor(
+        nL=250,xwidth=guide[8][0],yheight= guide[8][1],restore_neutron=1,
+        filename="wl_FO11",Lmin=1.27,Lmax=51.27)
+AT (0.0, 0.0, 0.001) RELATIVE PREVIOUS
+
+COMPONENT tof_FO11 = TOF_monitor(
+	restore_neutron=1, xwidth=guide[8][0], yheight=guide[8][1], filename="tof_FO11",
+	tmin=0, tmax=400000, nt=20000)
+AT (0.0, 0.0, 0.001) RELATIVE PREVIOUS
+
+COMPONENT psd_FO11 = PSD_monitor(
+	restore_neutron=1, xwidth=0.12, yheight=0.12, nx=120, ny=120, filename="PSD_FO11")
+AT (0.0, 0.0, 0.001) RELATIVE PREVIOUS
+
+COMPONENT divpos_1d_FO11 = Monitor_nD(
+	restore_neutron=1, xwidth=0.12, yheight=0.12, filename="divpos1d_FO11",
+options=
+        "multiple hdiv all bins=1000, limits=[-5.0,5.0]"
+        "multiple vdiv all bins=1000, limits=[-5.0,5.0]"
+        "multiple x all bins=1400, limits=[-7E-2, 7E-2]"
+        "multiple y all bins=1400, limits=[-7E-2, 7E-2]")
+AT (0.0, 0.0, 0.001) RELATIVE psd_FO11
+*/
+//G6 curved guide 36 pieces of 1 m each = 36 m; the guide starts at L=11.25 m 
+//G6_1
+COMPONENT G6 = Guide_gravity(
+        w1 = guide[8][0], h1 = guide[8][1], w2 = guide[8][2], h2 = guide[8][3],
+        l = guide[8][4], G=gravityeffect,
+        mleft = m[8][0], mright = m[8][1], mtop = m[8][2], mbottom = m[8][3],
+        alpha=0,atop=0,abottom=0,aleft=0,aright=0, W=0)
+        AT (0.0, 0.0, guide[7][4]+gapguides) RELATIVE PREVIOUS
+
+//G6_2
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_3
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_4
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_5
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_6
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_7
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_8
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_9
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_10
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_11
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_12
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_13
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_14
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_15
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_16
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+// Bunker Wall: L=24.5-28 m //
+
+//G6_17
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_18
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_19
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_20
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_21
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_22
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_23
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_24
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_25
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_26
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_27
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_28
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_29
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_30
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_31
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_32
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_33
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_34
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_35
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+//G6_36
+COMPONENT COPY(G6) = COPY(G6)
+        AT (0, 0, guide[8][4] + gapguides) RELATIVE PREVIOUS
+        ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+// Exit of CURVE at L=47.25 m, in D03 //
+
+// DETECTORS at exit of the CURVE //
+COMPONENT wavelength_curve=L_monitor(
+	nL=100,xwidth=guide[8][2],yheight= guide[8][3],restore_neutron=1,
+	filename="wavelength_curve",Lmin=1.27,Lmax=11.27)
+AT (0.0, 0.0, guide[8][4]+gapguides) RELATIVE PREVIOUS
+ROTATED (0, guide[8][4]/guide[8][8]*RAD2DEG, 0) RELATIVE PREVIOUS
+
+COMPONENT wl_curve=L_monitor(
+        nL=250,xwidth=guide[8][2],yheight= guide[8][3],restore_neutron=1,
+        filename="wl_curve",Lmin=1.27,Lmax=51.27)
+AT (0.0, 0.0, 0.001) RELATIVE PREVIOUS
+
+COMPONENT tof_curve = TOF_monitor(
+	restore_neutron=1, xwidth=guide[8][2], yheight=guide[8][3], filename="tof_curve",
+	tmin=5000, tmax=605000, nt=3000)
+AT (0.0, 0.0, 0.001) RELATIVE PREVIOUS
+
+COMPONENT psd_curve = PSD_monitor(
+	restore_neutron=1, xwidth=0.12, yheight=0.12, nx=120, ny=120, filename="psd_curve")
+AT (0.0, 0.0, 0.001) RELATIVE PREVIOUS
+
+COMPONENT divpos_1d_curve=Monitor_nD(
+	restore_neutron=1, xwidth=0.12, yheight=0.12,filename="divpos1d_curve",
+options=
+        "multiple hdiv all bins=500, limits=[-5.0,5.0]"
+        "multiple vdiv all bins=500, limits=[-5.0,5.0]"
+        "multiple x all bins=1400, limits=[-7E-2, 7E-2]"
+        "multiple y all bins=1400, limits=[-7E-2, 7E-2]")
+AT (0.0, 0.0, 0.001) RELATIVE psd_curve
+/*
+COMPONENT Ldiv_curve = DivLambda_monitor(nL=80, nh=40, filename="Ldiv_curve.div",
+          xmin=-0.1, xmax=0.1, ymin=-0.1, ymax=0.1,
+          maxdiv_h=2, Lmin=2.0, Lmax=10)
+AT (0, 0, 0.001) RELATIVE PREVIOUS
+*/
+
+///////////////////////////////////////////////////////////////////////
+//__________________________________________________________________________________________
+//
+
+// Horizontal trumpet: 1st section 2.8 m of 15 m //
+COMPONENT G7 = Guide_gravity(
+        w1 = guide[9][0], h1 = guide[9][1], w2 = guide[9][2], h2 = guide[9][3],
+        l = guide[9][4], G=gravityeffect,
+        mleft = m[9][0], mright = m[9][1], mtop = m[9][2], mbottom = m[9][3],
+        alpha=0,atop=0,abottom=0,aleft=0,aright=0, W=0)
+AT (0.0, 0.0, gapguides) RELATIVE PREVIOUS
+
+// FO-WBD CHOPPER 
+// Chopper FO50 at L=50 m, in the middle of the trumpet: simultaneous band definition, harmonic rejector and frame overlap functionality
+COMPONENT arm_chopperFO=Arm()
+AT (0.0, 0.0, guide[9][4] + gapchopperguide) RELATIVE G7
+
+COMPONENT FO = DiskChopper(
+        radius = chopper[4][3], nu = chopper[4][4], nslit = chopper[4][5],
+        theta_0 = chopper[4][6], yheight = chopper[4][7],
+        delay = chopper[4][9])
+        AT (0.0, 0.0, 0.0) RELATIVE arm_chopperFO
+
+// DETECTORS after the FO chopper - results are the same that the Trumpet monitors//
+
+// Horizontal trumpet: 2nd section 12.2 m of 15 m //
+COMPONENT G8 = Guide_gravity(
+        w1 = guide[10][0], h1 = guide[10][1], w2 = guide[10][2], h2 = guide[10][3],
+        l = guide[10][4], G=gravityeffect,
+        mleft = m[10][0], mright = m[10][1], mtop = m[10][2], mbottom = m[10][3],
+        alpha=0,atop=0,abottom=0,aleft=0,aright=0, W=0)
+AT (0.0, 0.0, gapchopperguide) RELATIVE PREVIOUS
+
+
+//DETECTORS at exit of the trumpet (at L=62.25 m from the moderator)
+COMPONENT wavelength_Trumpet=L_monitor(
+	nL=100,xwidth=guide[10][2],yheight= guide[10][3],restore_neutron=1,
+	filename="wavelength_trumpet",Lmin=1.27,Lmax=11.27)
+AT (0.0, 0.0, guide[10][4]+gapguides) RELATIVE G8
+
+COMPONENT wl_Trumpet=L_monitor(
+	nL=250,xwidth=guide[10][2],yheight= guide[10][3],restore_neutron=1,
+	filename="wl_trumpet",Lmin=1.27,Lmax=51.27)
+AT (0.0, 0.0, 0.001) RELATIVE PREVIOUS
+
+COMPONENT tof_Trumpet = TOF_monitor(
+	restore_neutron=1, xwidth=guide[10][2], yheight=guide[10][3], filename="tof_trumpet",
+	tmin=5000, tmax=605000, nt=3000)
+AT (0.0, 0.0, 0.001) RELATIVE PREVIOUS
+
+COMPONENT psd_trumpet = PSD_monitor(
+	restore_neutron=1, xwidth=0.14, yheight=0.14, nx=140, ny=140, filename="psd_trumpet")
+AT (0.0, 0.0, 0.001) RELATIVE PREVIOUS
+
+COMPONENT divpos_1d_trumpet=Monitor_nD(
+	restore_neutron=1, xwidth=0.14, yheight=0.14,filename="divpos1d_trumpet",
+options=
+        "multiple hdiv all bins=500, limits=[-5.0,5.0]"
+        "multiple vdiv all bins=500, limits=[-5.0,5.0]"
+        "multiple x all bins=1400, limits=[-7E-2, 7E-2]"
+        "multiple y all bins=1400, limits=[-7E-2, 7E-2]")
+AT (0.0, 0.0, 0.001) RELATIVE psd_trumpet
+/*
+COMPONENT Ldiv_trumpet = DivLambda_monitor
+        (nL=80, nh=40, filename="Ldiv_trumpet.div",
+          xmin=-0.14, xmax=0.1, ymin=-0.1, ymax=0.1,
+          maxdiv_h=2, Lmin=2.0, Lmax=10)
+AT (0, 0, 0.001) RELATIVE PREVIOUS
+*/
+
+//___________________________________________________________________________________
+///////////////////////////////////////////////////////////////////////
+
+//Long straight guide of 19 m
+COMPONENT G9a = Guide_gravity(
+        w1 = guide[11][0], h1 = guide[11][1], w2 = guide[11][2], h2 = guide[11][3],
+        l = guide[11][4], G = gravityeffect,
+        mleft = m[11][0], mright = m[11][1], mtop = m[11][2], mbottom = m[11][3],
+        alpha=0,atop=0,abottom=0,aleft=0,aright=0, W=0)
+        AT (0.0, 0.0, gapguides) RELATIVE PREVIOUS
+/*
+// FO81 CHOPPER 
+// Chopper at 81.25 m: simultaneous frame overlap prevention and wavelength band definition functions
+COMPONENT arm_chopperFO81=Arm()
+AT (0.0, 0.0, guide[11][4] + gapchopperguide) RELATIVE G5
+
+COMPONENT FO81 = DiskChopper(
+        radius = chopper[5][3], nu = chopper[5][4], nslit = chopper[5][5],
+        theta_0 = chopper[5][6], yheight = chopper[5][7],
+        delay = chopper[5][9])
+        AT (0.0, 0.0, 0.0) RELATIVE arm_chopperFO81
+
+// Detectors after FO81 and before curve//
+COMPONENT wavelength_FO81=L_monitor(
+	nL=100,xwidth=guide[12][0],yheight= guide[12][1],restore_neutron=1,
+	filename="wavelength_FO81",Lmin=1.27,Lmax=11.27)
+AT (0.0, 0.0, gapchopperguide) RELATIVE FO81
+
+COMPONENT wl_FO81=L_monitor(
+        nL=250,xwidth=guide[12][0],yheight= guide[12][1],restore_neutron=1,
+        filename="wl_FO81",Lmin=1.27,Lmax=51.27)
+AT (0.0, 0.0, 0.001) RELATIVE PREVIOUS
+
+COMPONENT tof_FO81 = TOF_monitor(
+	restore_neutron=1, xwidth=guide[12][0], yheight=guide[12][1], filename="tof_FO81",
+	tmin=5000, tmax=605000, nt=3000)
+AT (0.0, 0.0, 0.001) RELATIVE PREVIOUS
+
+COMPONENT psd_FO81 = PSD_monitor(
+	restore_neutron=1, xwidth=0.12, yheight=0.12, nx=120, ny=120, filename="PSD_FO81")
+AT (0.0, 0.0, 0.001) RELATIVE PREVIOUS
+
+COMPONENT divpos_1d_FO81 = Monitor_nD(
+	restore_neutron=1, xwidth=0.12, yheight=0.12, filename="divpos1d_FO81",
+options=
+        "multiple hdiv all bins=1000, limits=[-5.0,5.0]"
+        "multiple vdiv all bins=1000, limits=[-5.0,5.0]"
+        "multiple x all bins=1400, limits=[-7E-2, 7E-2]"
+        "multiple y all bins=1400, limits=[-7E-2, 7E-2]")
+AT (0.0, 0.0, 0.001) RELATIVE psd_FO81
+*/
+//Long straight guide of 61.25 m
+COMPONENT G9b = Guide_gravity(
+        w1 = guide[12][0], h1 = guide[12][1], w2 = guide[12][2], h2 = guide[12][3],
+        l = guide[12][4], G = gravityeffect,
+        mleft = m[12][0], mright = m[12][1], mtop = m[12][2], mbottom = m[12][3],
+        alpha=0,atop=0,abottom=0,aleft=0,aright=0, W=0)
+        AT (0.0, 0.0, guide[11][4] + gapguides) RELATIVE G9a
+
+//DETECTORS at exit of the Long Straight Guide (at 145 m from the moderator)
+COMPONENT wavelength_Straight=L_monitor(
+	nL=100,xwidth=guide[12][2],yheight= guide[12][3],restore_neutron=1,
+	filename="wavelength_Straight",Lmin=1.27,Lmax=11.27)
+AT (0.0, 0.0, guide[12][4]+gapguides) RELATIVE PREVIOUS
+
+COMPONENT wl_Straight=L_monitor(
+        nL=250,xwidth=guide[12][2],yheight= guide[12][3],restore_neutron=1,
+        filename="wl_Straight",Lmin=1.27,Lmax=51.27)
+AT (0.0, 0.0, 0.001) RELATIVE PREVIOUS
+
+COMPONENT tof_Straight = TOF_monitor(
+	restore_neutron=1, xwidth=guide[12][2], yheight=guide[12][3], filename="tof_Straight",
+	tmin=30000, tmax=830000, nt=4000)
+AT (0.0, 0.0, 0.001) RELATIVE PREVIOUS
+
+COMPONENT psd_Straight = PSD_monitor(
+	restore_neutron=1, xwidth=0.14, yheight=0.14, nx=140, ny=140, filename="psd_straight")
+AT (0.0, 0.0, 0.001) RELATIVE PREVIOUS
+
+COMPONENT divpos_1d_straight=Monitor_nD(
+	restore_neutron=1, xwidth=0.14, yheight=0.14,filename="divpos1d_straight",
+options=
+        "multiple hdiv all bins=500, limits=[-5.0,5.0]"
+        "multiple vdiv all bins=500, limits=[-5.0,5.0]"
+        "multiple x all bins=1400, limits=[-7E-2,7E-2]"
+        "multiple y all bins=1400, limits=[-7E-2,7E-2]")
+AT (0.0, 0.0, 0.001) RELATIVE psd_Straight
+
+//__________________________________________________________________________________________
+//
+//Focusing guide (starting at 145 m from the moderator)
+COMPONENT G10 = Guide_gravity(
+        w1 = guide[13][0], h1 = guide[13][1], w2 = guide[13][2], h2 = guide[13][3],
+        l = guide[13][4], G=gravityeffect,
+        mleft = m[13][0], mright = m[13][1], mtop = m[13][2], mbottom = m[13][3],
+        alpha=0,atop=0,abottom=0,aleft=0,aright=0, W=0)
+        AT (0.0, 0.0, gapguides) RELATIVE PREVIOUS
+
+COMPONENT G11 = Guide_gravity(
+        w1 = guide[14][0], h1 = guide[14][1], w2 = guide[14][2], h2 = guide[14][3],
+        l = guide[14][4], G=gravityeffect,
+        mleft = m[14][0], mright = m[14][1], mtop = m[14][2], mbottom = m[14][3],
+        alpha=0,atop=0,abottom=0,aleft=0,aright=0, W=0)
+        AT (0.0, 0.0, guide[13][4] + gapguides) RELATIVE G10
+
+COMPONENT G12 = Guide_gravity(
+        w1 = guide[15][0], h1 = guide[15][1], w2 = guide[15][2], h2 = guide[15][3],
+        l = guide[15][4], G=gravityeffect,
+        mleft = m[15][0], mright = m[15][1], mtop = m[15][2], mbottom = m[15][3],
+        alpha=0,atop=0,abottom=0,aleft=0,aright=0, W=0)
+        AT (0.0, 0.0, guide[14][4] + gapguides) RELATIVE G11
+
+COMPONENT G13 = Guide_gravity(
+        w1 = guide[16][0], h1 = guide[16][1], w2 = guide[16][2], h2 = guide[16][3],
+        l = guide[16][4], G=gravityeffect,
+        mleft = m[16][0], mright = m[16][1], mtop = m[16][2], mbottom = m[16][3],
+        alpha=0,atop=0,abottom=0,aleft=0,aright=0, W=0)
+        AT (0.0, 0.0, guide[15][4] + gapguides) RELATIVE G12
+
+COMPONENT G14 = Guide_gravity(
+        w1 = guide[17][0], h1 = guide[17][1], w2 = guide[17][2], h2 = guide[17][3],
+        l = guide[17][4], G=gravityeffect,
+        mleft = m[17][0], mright = m[17][1], mtop = m[17][2], mbottom = m[17][3],
+        alpha=0,atop=0,abottom=0,aleft=0,aright=0, W=0)
+        AT (0.0, 0.0, guide[16][4] + gapguides) RELATIVE G13
+
+COMPONENT G15 = Guide_gravity(
+        w1 = guide[18][0], h1 = guide[18][1], w2 = guide[18][2], h2 = guide[18][3],
+        l = guide[18][4], G=gravityeffect,
+        mleft = m[18][0], mright = m[18][1], mtop = m[18][2], mbottom = m[18][3],
+        alpha=0,atop=0,abottom=0,aleft=0,aright=0, W=0)
+        AT (0.0, 0.0, guide[17][4] + gapguides) RELATIVE G14
+
+////////////////
+
+////////////////
+//SAMPLE
+////////////////
+
+////////////////
+
+COMPONENT arm_sample = Arm()
+        AT (0.0, 0.0, guide[18][4] + dist_guide_sample) RELATIVE G15
+        ROTATED (0,0,0) RELATIVE G15
+
+COMPONENT incoherent = Incoherent(
+    radius= sample_radius,
+    yheight=sample_height,
+   thickness = sample_thickness,
+	target_x  = x_tS_d, 
+        target_y = y_tS_d,
+        target_z = z_tS_d
+)
+AT (0, 0, guide[18][4] + dist_guide_sample) RELATIVE G15
+
+COMPONENT arm_after_sample = Arm()
+	AT (0,0,0) RELATIVE arm_sample
+	ROTATED (x_tS,y_tS,0) RELATIVE arm_sample
+
+COMPONENT wavelength_sample=L_monitor(
+	nL=100,xwidth=0.03,yheight= 0.03,restore_neutron=1,
+	filename="wavelength_sample",Lmin=1.27,Lmax=11.27)
+AT (0.0, 0.0, 0.1) RELATIVE arm_sample
+
+COMPONENT wl_sample=L_monitor(
+        nL=250,xwidth=0.03,yheight= 0.03,restore_neutron=1,
+        filename="wl_sample",Lmin=1.27,Lmax=51.27)
+AT (0.0, 0.0, 0.11) RELATIVE arm_sample
+
+COMPONENT TOF_sample=TOF_monitor(
+	xwidth=0.03,yheight= 0.03,restore_neutron=1, nt=4000,
+	filename="TOF_sample", tmin=30000,tmax=830000)
+AT (0.0,0.0,0.13) RELATIVE arm_sample
+
+COMPONENT psd_sample = PSD_monitor(
+	restore_neutron=1, xwidth=0.1, yheight=0.1, nx=100, ny=100, filename="psd_sample")
+AT (0.0, 0.0, 0.14) RELATIVE PREVIOUS
+
+COMPONENT divpos_1d_sample=Monitor_nD(
+	restore_neutron=1, xwidth=0.1, yheight=0.1,filename="divpos1d_sample",
+options=
+        "multiple hdiv all bins=1000, limits=[-10.0,10.0]"
+        "multiple vdiv all bins=1000, limits=[-10.0,10.0]"
+        "multiple x all bins=1000, limits=[-5E-2, 5E-2]"
+        "multiple y all bins=1000, limits=[-5E-2, 5E-2]")
+AT (0.0, 0.0, 0.15) RELATIVE psd_sample
+
+COMPONENT e_monitor = E_monitor(
+    filename="E_sample", 
+    xwidth=0.02, 
+    yheight=0.02, 
+    Emin=0, 
+    Emax=5, 
+    restore_neutron=1)
+AT (0, 0, 0.16) RELATIVE arm_sample
+/*
+COMPONENT Ldiv_sample2A = DivLambda_monitor
+        (nL=80, nh=100, filename="Ldiv_Sample.div",
+          xmin=-0.05, xmax=0.05, ymin=-0.05, ymax=0.05,
+          maxdiv_h=5, Lmin=2.0, Lmax=10)
+AT (0, 0, 0.001) RELATIVE PREVIOUS
+*/
+
+
+COMPONENT PSD_monitor_analyzer = PSD_monitor(
+    nx = 40,
+    ny = 40,
+    xwidth = width*2,
+    yheight = width*2,
+    restore_neutron=1,
+    filename="PSD_analyzer.dat")
+AT (x_tS_d, y_tS_d, z_tS_d) RELATIVE arm_after_sample
+
+COMPONENT Analyzer = Monochromator_flat(
+    zwidth = width*10,
+    yheight = width*10,
+    mosaich = 37, 
+    mosaicv = 37,
+    Q = 1.87278, 
+    DM = d_PG,
+    r0 = 0.8)
+AT (0, 0, 0) RELATIVE arm_after_sample
+ROTATED (90-tA, 90, 0) RELATIVE arm_after_sample
+
+
+////////////////
+//DETECTOR
+////////////////
+
+
+
+// ARM TO DETECTOR -6
+COMPONENT arm_analyzer_m6 = Arm()
+AT (0, 0, 0) RELATIVE arm_after_sample
+ROTATED (0, -tRDy*6, 0) RELATIVE arm_after_sample
+
+COMPONENT Detector_m6 = PSD_monitor(
+    nx = 40,
+    ny = 40,
+    xwidth = 0.0125,
+    yheight = 0.01,
+    restore_neutron=1,
+    filename="Detector_m6.dat")
+AT (0, h_D, d_SDz) RELATIVE PREVIOUS
+ROTATED (0, -tRDy*6, 0) RELATIVE arm_sample
+
+COMPONENT E_monitor_m6 = E_monitor(
+    xwidth = 0.0125,
+    yheight = 0.01,
+    Emin = 1.5,
+    Emax = 2.5, 
+    restore_neutron = 1,
+    nE = 1000,
+    filename="E_monitor_m6.dat")
+AT (0, 0, u) RELATIVE PREVIOUS
+
+// ARM TO DETECTOR -5
+COMPONENT arm_analyzer_m5 = Arm()
+AT (0, 0, 0) RELATIVE arm_after_sample
+ROTATED (0, -tRDy*5, 0) RELATIVE arm_after_sample
+
+COMPONENT Detector_m5 = PSD_monitor(
+    nx = 40,
+    ny = 40,
+    xwidth = 0.0125,
+    yheight = 0.01,
+    restore_neutron=1,
+    filename="Detector_m5.dat")
+AT (0, h_D, d_SDz) RELATIVE PREVIOUS
+ROTATED (0, -tRDy*5, 0) RELATIVE arm_sample
+
+COMPONENT E_monitor_m5 = E_monitor(
+    xwidth = 0.0125,
+    yheight = 0.01,
+    Emin = 1.5,
+    Emax = 2.5, 
+    restore_neutron = 1,
+    nE = 1000,
+    filename="E_monitor_m5.dat")
+AT (0, 0, u) RELATIVE PREVIOUS
+
+// ARM TO DETECTOR -4
+COMPONENT arm_analyzer_m4 = Arm()
+AT (0, 0, 0) RELATIVE arm_after_sample
+ROTATED (0, -tRDy*4, 0) RELATIVE arm_after_sample
+
+COMPONENT Detector_m4 = PSD_monitor(
+    nx = 40,
+    ny = 40,
+    xwidth = 0.0125,
+    yheight = 0.01,
+    restore_neutron=1,
+    filename="Detector_m4.dat")
+AT (0, h_D, d_SDz) RELATIVE PREVIOUS
+ROTATED (0, -tRDy*4, 0) RELATIVE arm_sample
+
+COMPONENT E_monitor_m4 = E_monitor(
+    xwidth = 0.0125,
+    yheight = 0.01,
+    Emin = 1.5,
+    Emax = 2.5, 
+    restore_neutron = 1,
+    nE = 1000,
+    filename="E_monitor_m4.dat")
+AT (0, 0, u) RELATIVE PREVIOUS
+
+// ARM TO DETECTOR -3
+COMPONENT arm_analyzer_m3 = Arm()
+AT (0, 0, 0) RELATIVE arm_after_sample
+ROTATED (0, -tRDy*3, 0) RELATIVE arm_after_sample
+
+COMPONENT Detector_m3 = PSD_monitor(
+    nx = 40,
+    ny = 40,
+    xwidth = 0.0125,
+    yheight = 0.01,
+    restore_neutron=1,
+    filename="Detector_m3.dat")
+AT (0, h_D, d_SDz) RELATIVE PREVIOUS
+ROTATED (0, -tRDy*3, 0) RELATIVE arm_sample
+
+COMPONENT E_monitor_m3 = E_monitor(
+    xwidth = 0.0125,
+    yheight = 0.01,
+    Emin = 1.5,
+    Emax = 2.5, 
+    restore_neutron = 1,
+    nE = 1000,
+    filename="E_monitor_m3.dat")
+AT (0, 0, u) RELATIVE PREVIOUS
+
+
+// ARM TO DETECTOR -2
+COMPONENT arm_analyzer_m2 = Arm()
+AT (0, 0, 0) RELATIVE arm_after_sample
+ROTATED (0, -tRDy*2, 0) RELATIVE arm_after_sample
+
+COMPONENT Detector_m2 = PSD_monitor(
+    nx = 40,
+    ny = 40,
+    xwidth = 0.0125,
+    yheight = 0.01,
+    restore_neutron=1,
+    filename="Detector_m2.dat")
+AT (0, h_D, d_SDz) RELATIVE PREVIOUS
+ROTATED (0, -tRDy*2, 0) RELATIVE arm_sample
+
+COMPONENT E_monitor_m2 = E_monitor(
+    xwidth = 0.0125,
+    yheight = 0.01,
+    Emin = 1.5,
+    Emax = 2.5, 
+    restore_neutron = 1,
+    nE = 1000,
+    filename="E_monitor_m2.dat")
+AT (0, 0, u) RELATIVE PREVIOUS
+
+
+
+// ARM TO DETECTOR -1
+COMPONENT arm_analyzer_m1 = Arm()
+AT (0, 0, 0) RELATIVE arm_after_sample
+ROTATED (0, -tRDy, 0) RELATIVE arm_after_sample
+
+COMPONENT Detector_m1 = PSD_monitor(
+    nx = 40,
+    ny = 40,
+    xwidth = 0.0125,
+    yheight = 0.01,
+    restore_neutron=1,
+    filename="Detector_m1.dat")
+AT (0, h_D, d_SDz) RELATIVE PREVIOUS
+ROTATED (0, -tRDy, 0) RELATIVE arm_sample
+
+COMPONENT E_monitor_m1 = E_monitor(
+    xwidth = 0.0125,
+    yheight = 0.01,
+    Emin = 1.5,
+    Emax = 2.5, 
+    restore_neutron = 1,
+    nE = 1000,
+    filename="E_monitor_m1.dat")
+AT (0, 0, u) RELATIVE PREVIOUS
+
+// ARM TO DETECTOR 0
+COMPONENT arm_analyzer_0 = Arm()
+AT (0, 0, 0) RELATIVE arm_after_sample
+ROTATED (0, 0, 0) RELATIVE arm_after_sample
+
+COMPONENT Detector_0 = PSD_monitor(
+    nx = 40,
+    ny = 40,
+    xwidth = 0.0125,
+    yheight = 0.01,
+    restore_neutron=1,
+    filename="Detector_0.dat")
+AT (0, h_D, d_SDz) RELATIVE PREVIOUS
+ROTATED (0, 0, 0) RELATIVE arm_sample
+
+COMPONENT E_monitor_0 = E_monitor(
+    xwidth = 0.0125,
+    yheight = 0.01,
+    Emin = 1.5,
+    Emax = 2.5, 
+    restore_neutron = 1,
+    nE = 1000,
+    filename="E_monitor_0.dat")
+AT (0, 0, u) RELATIVE PREVIOUS
+
+
+// ARM TO DETECTOR 1
+COMPONENT arm_analyzer_1 = Arm()
+AT (0, 0, 0) RELATIVE arm_after_sample
+ROTATED (0, tRDy, 0) RELATIVE arm_after_sample
+
+COMPONENT Detector_1 = PSD_monitor(
+    nx = 40,
+    ny = 40,
+    xwidth = 0.0125,
+    yheight = 0.01,
+    restore_neutron=1,
+    filename="Detector_1.dat")
+AT (0, h_D, d_SDz) RELATIVE PREVIOUS
+ROTATED (0, tRDy, 0) RELATIVE arm_sample
+
+COMPONENT E_monitor_1 = E_monitor(
+    xwidth = 0.0125,
+    yheight = 0.01,
+    Emin = 1.5,
+    Emax = 2.5, 
+    restore_neutron = 1,
+    nE = 1000,
+    filename="E_monitor_1.dat")
+AT (0, 0, u) RELATIVE PREVIOUS
+
+// ARM TO DETECTOR 2
+COMPONENT arm_analyzer_2 = Arm()
+AT (0, 0, 0) RELATIVE arm_after_sample
+ROTATED (0, tRDy*2, 0) RELATIVE arm_after_sample
+
+COMPONENT Detector_2 = PSD_monitor(
+    nx = 40,
+    ny = 40,
+    xwidth = 0.0125,
+    yheight = 0.01,
+    restore_neutron=1,
+    filename="Detector_2.dat")
+AT (0, h_D, d_SDz) RELATIVE PREVIOUS
+ROTATED (0, tRDy*2, 0) RELATIVE arm_sample
+
+COMPONENT E_monitor_2 = E_monitor(
+    xwidth = 0.0125,
+    yheight = 0.01,
+    Emin = 1.5,
+    Emax = 2.5, 
+    restore_neutron = 1,
+    nE = 1000,
+    filename="E_monitor_2.dat")
+AT (0, 0, u) RELATIVE PREVIOUS
+
+// ARM TO DETECTOR 3
+COMPONENT arm_analyzer_3 = Arm()
+AT (0, 0, 0) RELATIVE arm_after_sample
+ROTATED (0, tRDy*3, 0) RELATIVE arm_after_sample
+
+COMPONENT Detector_3 = PSD_monitor(
+    nx = 40,
+    ny = 40,
+    xwidth = 0.0125,
+    yheight = 0.01,
+    restore_neutron=1,
+    filename="Detector_3.dat")
+AT (0, h_D, d_SDz) RELATIVE PREVIOUS
+ROTATED (0, tRDy*3, 0) RELATIVE arm_sample
+
+COMPONENT E_monitor_3 = E_monitor(
+    xwidth = 0.0125,
+    yheight = 0.01,
+    Emin = 1.5,
+    Emax = 2.5, 
+    restore_neutron = 1,
+    nE = 1000,
+    filename="E_monitor_3.dat")
+AT (0, 0, u) RELATIVE PREVIOUS
+
+// ARM TO DETECTOR 4
+COMPONENT arm_analyzer_4 = Arm()
+AT (0, 0, 0) RELATIVE arm_after_sample
+ROTATED (0, tRDy*4, 0) RELATIVE arm_after_sample
+
+COMPONENT Detector_4 = PSD_monitor(
+    nx = 40,
+    ny = 40,
+    xwidth = 0.0125,
+    yheight = 0.01,
+    restore_neutron=1,
+    filename="Detector_4.dat")
+AT (0, h_D, d_SDz) RELATIVE PREVIOUS
+ROTATED (0, tRDy*4, 0) RELATIVE arm_sample
+
+COMPONENT E_monitor_4 = E_monitor(
+    xwidth = 0.0125,
+    yheight = 0.01,
+    Emin = 1.5,
+    Emax = 2.5, 
+    restore_neutron = 1,
+    nE = 1000,
+    filename="E_monitor_4.dat")
+AT (0, 0, u) RELATIVE PREVIOUS
+
+// ARM TO DETECTOR 5
+COMPONENT arm_analyzer_5 = Arm()
+AT (0, 0, 0) RELATIVE arm_after_sample
+ROTATED (0, tRDy*5, 0) RELATIVE arm_after_sample
+
+COMPONENT Detector_5 = PSD_monitor(
+    nx = 40,
+    ny = 40,
+    xwidth = 0.0125,
+    yheight = 0.01,
+    restore_neutron=1,
+    filename="Detector_5.dat")
+AT (0, h_D, d_SDz) RELATIVE PREVIOUS
+ROTATED (0, tRDy*5, 0) RELATIVE arm_sample
+
+COMPONENT E_monitor_5 = E_monitor(
+    xwidth = 0.0125,
+    yheight = 0.01,
+    Emin = 1.5,
+    Emax = 2.5, 
+    restore_neutron = 1,
+    nE = 1000,
+    filename="E_monitor_5.dat")
+AT (0, 0, u) RELATIVE PREVIOUS
+
+// ARM TO DETECTOR 6
+COMPONENT arm_analyzer_6 = Arm()
+AT (0, 0, 0) RELATIVE arm_after_sample
+ROTATED (0, tRDy*6, 0) RELATIVE arm_after_sample
+
+COMPONENT Detector_6 = PSD_monitor(
+    nx = 40,
+    ny = 40,
+    xwidth = 0.0125,
+    yheight = 0.01,
+    restore_neutron=1,
+    filename="Detector_6.dat")
+AT (0, h_D, d_SDz) RELATIVE PREVIOUS
+ROTATED (0, tRDy*6, 0) RELATIVE arm_sample
+
+COMPONENT E_monitor_6 = E_monitor(
+    xwidth = 0.0125,
+    yheight = 0.01,
+    Emin = 1.5,
+    Emax = 2.5, 
+    restore_neutron = 1,
+    nE = 1000,
+    filename="E_monitor_6.dat")
+AT (0, 0, u) RELATIVE PREVIOUS
+
+
+FINALLY
+%{
+
+%}
+	
+
+END

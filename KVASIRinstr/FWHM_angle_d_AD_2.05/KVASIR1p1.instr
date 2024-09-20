@@ -37,13 +37,13 @@ double u;
 INITIALIZE
 %{
 D_lambda=0.1;
-width=0.01;
+width=0.001;
 u =1E-4;
 d_PG=3.355;
 
 lambda_f = 1/(0.11056*sqrt(Ef));
 tA = asin(lambda_f/(2*d_PG))*RAD2DEG;
-tS=20;
+tS=0;
 
 d_SDz = d_SA+d_AD*cos(2*tA*DEG2RAD);
 h_D = d_AD*sin(2*tA*DEG2RAD);
@@ -122,7 +122,7 @@ COMPONENT Detector_m6 = PSD_monitor(
     restore_neutron=1,
     filename="Detector_m6.dat")
 AT (0, h_D, d_SDz) RELATIVE PREVIOUS
-ROTATED (tS-tRDx, 0, 0) RELATIVE PREVIOUS
+ROTATED (0, -tRDy*6, 0) RELATIVE origin
 
 COMPONENT E_monitor_m6 = E_monitor(
     xwidth = 0.0125,
@@ -147,7 +147,7 @@ COMPONENT Detector_m5 = PSD_monitor(
     restore_neutron=1,
     filename="Detector_m5.dat")
 AT (0, h_D, d_SDz) RELATIVE PREVIOUS
-ROTATED (tS-tRDx, 0, 0) RELATIVE PREVIOUS
+ROTATED (0, -tRDy*5, 0) RELATIVE origin
 
 COMPONENT E_monitor_m5 = E_monitor(
     xwidth = 0.0125,
@@ -172,7 +172,7 @@ COMPONENT Detector_m4 = PSD_monitor(
     restore_neutron=1,
     filename="Detector_m4.dat")
 AT (0, h_D, d_SDz) RELATIVE PREVIOUS
-ROTATED (tS-tRDx, 0, 0) RELATIVE PREVIOUS
+ROTATED (0, -tRDy*4, 0) RELATIVE origin
 
 COMPONENT E_monitor_m4 = E_monitor(
     xwidth = 0.0125,
@@ -197,7 +197,7 @@ COMPONENT Detector_m3 = PSD_monitor(
     restore_neutron=1,
     filename="Detector_m3.dat")
 AT (0, h_D, d_SDz) RELATIVE PREVIOUS
-ROTATED (tS-tRDx, 0, 0) RELATIVE PREVIOUS
+ROTATED (0, -tRDy*3, 0) RELATIVE origin
 
 COMPONENT E_monitor_m3 = E_monitor(
     xwidth = 0.0125,
@@ -223,7 +223,7 @@ COMPONENT Detector_m2 = PSD_monitor(
     restore_neutron=1,
     filename="Detector_m2.dat")
 AT (0, h_D, d_SDz) RELATIVE PREVIOUS
-ROTATED (tS-tRDx, 0, 0) RELATIVE PREVIOUS
+ROTATED (0, -tRDy*2, 0) RELATIVE origin
 
 COMPONENT E_monitor_m2 = E_monitor(
     xwidth = 0.0125,
@@ -250,7 +250,7 @@ COMPONENT Detector_m1 = PSD_monitor(
     restore_neutron=1,
     filename="Detector_m1.dat")
 AT (0, h_D, d_SDz) RELATIVE PREVIOUS
-ROTATED (tS-tRDx, 0, 0) RELATIVE PREVIOUS
+ROTATED (0, -tRDy, 0) RELATIVE origin
 
 COMPONENT E_monitor_m1 = E_monitor(
     xwidth = 0.0125,
@@ -275,7 +275,7 @@ COMPONENT Detector_0 = PSD_monitor(
     restore_neutron=1,
     filename="Detector_0.dat")
 AT (0, h_D, d_SDz) RELATIVE PREVIOUS
-ROTATED (tS-tRDx, 0, 0) RELATIVE PREVIOUS
+ROTATED (0, 0, 0) RELATIVE origin
 
 COMPONENT E_monitor_0 = E_monitor(
     xwidth = 0.0125,
@@ -301,7 +301,7 @@ COMPONENT Detector_1 = PSD_monitor(
     restore_neutron=1,
     filename="Detector_1.dat")
 AT (0, h_D, d_SDz) RELATIVE PREVIOUS
-ROTATED (tS-tRDx, 0, 0) RELATIVE PREVIOUS
+ROTATED (0, tRDy, 0) RELATIVE origin
 
 COMPONENT E_monitor_1 = E_monitor(
     xwidth = 0.0125,
@@ -326,7 +326,7 @@ COMPONENT Detector_2 = PSD_monitor(
     restore_neutron=1,
     filename="Detector_2.dat")
 AT (0, h_D, d_SDz) RELATIVE PREVIOUS
-ROTATED (tS-tRDx, 0, 0) RELATIVE PREVIOUS
+ROTATED (0, tRDy*2, 0) RELATIVE origin
 
 COMPONENT E_monitor_2 = E_monitor(
     xwidth = 0.0125,
@@ -351,7 +351,7 @@ COMPONENT Detector_3 = PSD_monitor(
     restore_neutron=1,
     filename="Detector_3.dat")
 AT (0, h_D, d_SDz) RELATIVE PREVIOUS
-ROTATED (tS-tRDx, 0, 0) RELATIVE PREVIOUS
+ROTATED (0, tRDy*3, 0) RELATIVE origin
 
 COMPONENT E_monitor_3 = E_monitor(
     xwidth = 0.0125,
@@ -376,7 +376,7 @@ COMPONENT Detector_4 = PSD_monitor(
     restore_neutron=1,
     filename="Detector_4.dat")
 AT (0, h_D, d_SDz) RELATIVE PREVIOUS
-ROTATED (tS-tRDx, 0, 0) RELATIVE PREVIOUS
+ROTATED (0, tRDy*4, 0) RELATIVE origin
 
 COMPONENT E_monitor_4 = E_monitor(
     xwidth = 0.0125,
@@ -401,7 +401,7 @@ COMPONENT Detector_5 = PSD_monitor(
     restore_neutron=1,
     filename="Detector_5.dat")
 AT (0, h_D, d_SDz) RELATIVE PREVIOUS
-ROTATED (tS-tRDx, 0, 0) RELATIVE PREVIOUS
+ROTATED (0, tRDy*5, 0) RELATIVE origin
 
 COMPONENT E_monitor_5 = E_monitor(
     xwidth = 0.0125,
@@ -426,7 +426,7 @@ COMPONENT Detector_6 = PSD_monitor(
     restore_neutron=1,
     filename="Detector_6.dat")
 AT (0, h_D, d_SDz) RELATIVE PREVIOUS
-ROTATED (tS-tRDx, 0, 0) RELATIVE PREVIOUS
+ROTATED (0, tRDy*6, 0) RELATIVE origin
 
 COMPONENT E_monitor_6 = E_monitor(
     xwidth = 0.0125,
